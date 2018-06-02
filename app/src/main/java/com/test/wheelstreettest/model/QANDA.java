@@ -19,6 +19,9 @@ public class QANDA {
         this.Q_ID=id;
     }
 
+    public QANDA() {
+    }
+
     public String getANS() {
         return ANS;
     }
@@ -35,4 +38,19 @@ public class QANDA {
         return TYPE;
     }
 
+    public void setANS(String ANS) {
+        this.ANS = ANS;
+    }
+
+    public void setQ_ID(String q_ID) {
+        Q_ID = q_ID;
+    }
+
+    public void setQUA(String QUA) {
+        this.QUA = QUA;
+    }
+
+    public void setTYPE(String TYPE) {
+        this.TYPE = TYPE;
+    }
 }

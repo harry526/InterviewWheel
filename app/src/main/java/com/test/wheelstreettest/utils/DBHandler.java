@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.test.wheelstreettest.model.QANDA;
 import com.test.wheelstreettest.model.UserDetails;
@@ -49,9 +50,17 @@ public class DBHandler extends SQLiteOpenHelper {
                 + Q_ID + " TEXT,"
                 + QUA + " TEXT,"
                 + ANS + " TEXT,"
-                + TYPE + " TEXT," + ")";
+                + TYPE + " TEXT" + ")";
 
-        String createTable = "CREATE TABLE " + TABLE_NAME + "(" + KEY_ID + " INTEGER PRIMARY KEY," + F_ID + " TEXT," + NAME + " TEXT," + EMAIL + " TEXT," + DOB + " TEXT," + DP + " TEXT," + GENDER + " TEXT," + MOBILE + " TEXT" + ")";
+        String createTable = "CREATE TABLE " + TABLE_NAME + "("
+                + KEY_ID + " INTEGER PRIMARY KEY,"
+                + F_ID + " TEXT,"
+                + NAME + " TEXT,"
+                + EMAIL + " TEXT,"
+                + DOB + " TEXT,"
+                + DP + " TEXT,"
+                + GENDER + " TEXT,"
+                + MOBILE + " TEXT" + ")";
         db.execSQL(createTable);
         db.execSQL(createTable1);
     }
@@ -62,7 +71,6 @@ public class DBHandler extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + QANDATABLE);
         onCreate(db);
     }
-
 
 
     public void insertQandA(QANDA model) {
@@ -84,10 +92,10 @@ public class DBHandler extends SQLiteOpenHelper {
         values.put(F_ID, model.getId());
         values.put(NAME, model.getName());
         values.put(EMAIL, model.getEmail());
-        values.put(DOB, model.getDob());
+        values.put(DOB, "N/A");
         values.put(DP, model.getDp());
-        values.put(GENDER, "");
-        values.put(MOBILE, "");
+        values.put(GENDER, "N/A");
+        values.put(MOBILE, "N/A");
         db.insert(TABLE_NAME, null, values);
         db.close();
     }
@@ -107,23 +115,87 @@ public class DBHandler extends SQLiteOpenHelper {
         db.close();
     }
 
+
+
+    public void updateAnw(String q,String a) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(ANS, a);
+        db.update(QANDATABLE, values, QUA + "=" + "'"+q+"'", null);
+        db.close();
+    }
+
+
+
+    public List<QANDA> getQandA() {
+
+        String getQuary = "SELECT * FROM " + QANDATABLE+" WHERE "+ANS+"!=0";
+        SQLiteDatabase database = this.getReadableDatabase();
+        Cursor cursor = database.rawQuery(getQuary, null);
+        List<QANDA> list = new ArrayList<>();
+        if (cursor.moveToFirst()) {
+            do {
+                QANDA model = new QANDA();
+                model.setQ_ID(cursor.getString(1));
+                model.setQUA(cursor.getString(2));
+                model.setANS(cursor.getString(3));
+                list.add(model);
+            }
+            while ((cursor.moveToNext()));
+
+            return list;
+
+        }
+
+       return null;
+    }
+
+    public List<QANDA> getQuations() {
+
+        String getQuary = "SELECT * FROM " + QANDATABLE;
+        SQLiteDatabase database = this.getWritableDatabase();
+        Cursor cursor = database.rawQuery(getQuary, null);
+        List<QANDA> list = new ArrayList<>();
+        if (cursor.moveToNext()) {
+            do {
+                QANDA model = new QANDA();
+                model.setQ_ID(cursor.getString(1));
+                model.setQUA(cursor.getString(2));
+                model.setTYPE(cursor.getString(3));
+                list.add(model);
+            }
+            while ((cursor.moveToNext()));
+        }
+
+        return list;
+    }
+
+
     public UserDetails getProfile() {
 
         String getQuary = "SELECT * FROM " + TABLE_NAME;
         SQLiteDatabase database = this.getWritableDatabase();
         Cursor cursor = database.rawQuery(getQuary, null);
         if (cursor.moveToFirst()) {
-
             UserDetails model = new UserDetails();
             model.setId(cursor.getString(1));
             model.setName(cursor.getString(2));
             model.setEmail(cursor.getString(3));
             model.setDob(cursor.getString(4));
             model.setDp(cursor.getString(5));
-            model.setGender(cursor.getString(5));
+            model.setGender(cursor.getString(6));
+            model.setMobile(cursor.getString(7));
             return model;
         }
         return null;
+    }
+
+
+    public boolean hasloaded() {
+        String getQuary = "SELECT * FROM " + QANDATABLE;
+        SQLiteDatabase database = this.getWritableDatabase();
+        Cursor cursor = database.rawQuery(getQuary, null);
+        return cursor != null && cursor.moveToFirst();
     }
 
     public void DeleteDetails() {

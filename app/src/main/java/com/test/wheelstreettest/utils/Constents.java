@@ -2,7 +2,14 @@ package com.test.wheelstreettest.utils;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
+import android.provider.Settings;
+import android.support.v7.app.AlertDialog;
 import android.widget.Toast;
+
+import com.test.wheelstreettest.ui.activity.MainActivity;
 
 /**
  * Created by Harish on 5/9/2018.

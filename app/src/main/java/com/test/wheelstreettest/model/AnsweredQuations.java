@@ -12,14 +12,14 @@ public class AnsweredQuations {
 
     @SerializedName("id")
     @Expose
-    private Integer id;
+    private String id;
 
     @SerializedName("answer")
     @Expose
     private Object answer;
 
 
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
@@ -27,7 +27,7 @@ public class AnsweredQuations {
         return answer;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 

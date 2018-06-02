@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 import com.test.wheelstreettest.R;
 import com.test.wheelstreettest.model.Datum;
+import com.test.wheelstreettest.model.QANDA;
 import com.test.wheelstreettest.model.QuationsModel;
 import com.test.wheelstreettest.ui.activity.MainActivity;
 
@@ -34,14 +35,12 @@ import butterknife.ButterKnife;
 
 public class QuationsAdapter extends RecyclerView.Adapter<QuationsAdapter.myHolder> {
 
-    QuationsModel model;
 
-    List<Datum> quations;
     List<Datum> answers;
 
     List<String> listquations;
     List<String> listanswers;
-
+    List<QANDA> model;
     public static List<String> listall;
 
     Context ctx;
@@ -50,13 +49,13 @@ public class QuationsAdapter extends RecyclerView.Adapter<QuationsAdapter.myHold
     public QuationsAdapter(){
 
     }
-    public QuationsAdapter(Context ctx, QuationsModel model,List<String> listall) {
+    public QuationsAdapter(Context ctx, List<QANDA> model, List<String> listall) {
         this.ctx = ctx;
         this.model = model;
         this.listall = listall;
         this.model = model;
         answers = new ArrayList<>();
-        quations = model.getData();
+      //  quations = model.getData();
     }
 
     @NonNull
@@ -68,6 +67,34 @@ public class QuationsAdapter extends RecyclerView.Adapter<QuationsAdapter.myHold
 
     @Override
     public void onBindViewHolder(@NonNull myHolder holder, int position) {
+
+
+        if(model!=null){
+            listall.add(model.get(position).getQUA());
+            listall.add(model.get(position).getANS());
+
+            if(listall.get(position).contains("-")) {
+                final FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) holder.quation.getLayoutParams();
+                params.gravity = GravityCompat.START;
+                holder.quation.setLayoutParams(params);
+                holder.quation.setBackgroundResource(R.drawable.text_background);
+                holder.quation.setTypeface(null, Typeface.BOLD);
+                holder.quation.setTextColor(Color.WHITE);
+                String quation=listall.get(position).replaceAll("-","");
+                holder.quation.setText(quation);
+
+            }
+            else{
+                final FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) holder.quation.getLayoutParams();
+                params.gravity = GravityCompat.END;
+                holder.quation.setLayoutParams(params);
+                holder.quation.setTypeface(null, Typeface.NORMAL);
+                holder.quation.setTextColor(Color.DKGRAY);
+                holder.quation.setBackgroundResource(R.drawable.text_background_aeaea);
+                holder.quation.setText(listall.get(position));
+            }
+
+        }
 
 
         if(listall.get(position).contains("-")) {
@@ -94,10 +121,7 @@ public class QuationsAdapter extends RecyclerView.Adapter<QuationsAdapter.myHold
     }
 
 
-    public void insertanswer(List<String> listanswers){
-        this.listanswers=listanswers;
-        notifyDataSetChanged();
-    }
+
 
     public void listall(String listall){
         this.listall.add(listall);

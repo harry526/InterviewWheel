@@ -21,7 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.test.wheelstreettest.R;
-import com.test.wheelstreettest.adapter.QuationsAdapter;
+import com.test.wheelstreettest.adapter.QuationsAdapterSQ;
 import com.test.wheelstreettest.main.IMainView;
 import com.test.wheelstreettest.main.Presenter;
 import com.test.wheelstreettest.model.AnswerModel;
@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity implements IMainView {
     ImageView send;
     @BindView(R.id.answeredit)
     EditText answeredit;
-
     @BindView(R.id.yes)
     TextView yes;
     @BindView(R.id.no)
@@ -64,14 +63,12 @@ public class MainActivity extends AppCompatActivity implements IMainView {
     @BindView(R.id.submit)
     FloatingActionButton submit;
     int i = 0;
-
     List<AnsweredQuations> answeredQuationsList;
     AnsweredQuations answeredQuations;
     String currentAnswer;
     List<Datum> data;
-    List<String> quations;
-    List<String> answers;
-    QuationsAdapter adapter;
+    List<QANDA> finalqndid;
+    QuationsAdapterSQ adapter;
     Presenter presenter;
     Constents constents;
     DBHandler dbHandler;
@@ -82,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements IMainView {
     String gender;
     String email;
     String mobile;
+    List<String> listAll;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,7 +88,9 @@ public class MainActivity extends AppCompatActivity implements IMainView {
         ButterKnife.bind(this);
         init();
     }
-    protected void init(){
+
+    protected void init() {
+        adapter = new QuationsAdapterSQ();
         dbHandler = new DBHandler(this);
         userDetails = dbHandler.getProfile();
         id = userDetails.getId();
@@ -99,30 +99,107 @@ public class MainActivity extends AppCompatActivity implements IMainView {
         gender = userDetails.getGender();
         email = userDetails.getEmail();
         mobile = userDetails.getMobile();
-
-        answers = new ArrayList<>();
         answeredQuations = new AnsweredQuations();
         answeredQuationsList = new ArrayList<>();
         recycle.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL));
-        // scroll=recycle;
         constents = new Constents();
         presenter = new Presenter(this);
-        constents.showProgressdialog(this);
-
-
-        presenter.attemptToGetQuations();
+        listAll = new ArrayList<>();
+        get();
     }
+
+    public void get() {
+        finalqndid = dbHandler.getQuations();
+        if (dbHandler.hasloaded()) {
+
+            if (dbHandler.getQandA() != null) {
+
+                List<QANDA> list = dbHandler.getQandA();
+                for (int j = 0; j < list.size(); j++) {
+                    listAll.add("-" + list.get(j).getQUA());
+                    listAll.add(list.get(j).getANS());
+                }
+                adapter = new QuationsAdapterSQ(listAll);
+                recycle.setAdapter(adapter);
+                getNextQuestion(listAll.size() - (listAll.size() / 2));
+
+            } else {
+
+                listAll.add("-" + finalqndid.get(i).getQUA());
+                adapter = new QuationsAdapterSQ(listAll);
+                recycle.setAdapter(adapter);
+            }
+
+        } else {
+            constents.showProgressdialog(this);
+            presenter.attemptToGetQuations();
+
+        }
+    }
+
+
+    private void getNextQuestion(int index) {
+        answeredit.setText("");
+        if (index < finalqndid.size()) {
+            QANDA data = finalqndid.get(index);
+            listAll.add("-" + data.getQUA());
+            adapter.notifyDataSetChanged();
+            recycle.scrollToPosition(listAll.size() - 1);
+
+            if (index == 1) {
+
+                answeredit.setInputType(InputType.TYPE_CLASS_TEXT);
+                setEditTextMaxLength(100);
+            } else if (index == 2) {
+
+                answeredit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
+                setEditTextMaxLength(10);
+
+            } else if (index == 3) {
+
+                typing.setVisibility(View.GONE);
+                yesno.setVisibility(View.VISIBLE);
+
+            } else if (index == 4) {
+
+                typing.setVisibility(View.VISIBLE);
+                yesno.setVisibility(View.GONE);
+                answeredit.requestFocus();
+
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(answeredit, InputMethodManager.SHOW_IMPLICIT);
+
+
+                answeredit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
+                setEditTextMaxLength(5);
+            }
+
+
+        } else {
+            completed.setVisibility(View.VISIBLE);
+            typing.setVisibility(View.GONE);
+            yesno.setVisibility(View.GONE);
+        }
+        recycle.scrollToPosition(listAll.size() - 1);
+
+    }
+
 
     @Override
     public void onSuccess(QuationsModel model) {
         constents.dismissProgress();
-        quations = new ArrayList<>();
+
         data = model.getData();
-        quations.add("-" + model.getData().get(i).getQuestion());
-        adapter = new QuationsAdapter(this, model, quations);
-        answeredit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
-        setEditTextMaxLength(2);
-        recycle.setAdapter(adapter);
+
+        for (int i = 0; i < data.size(); i++) {
+            QANDA qanda = new QANDA();
+            qanda.setTYPE(String.valueOf(data.get(i).getDataType()));
+            qanda.setQ_ID(String.valueOf(data.get(i).getId()));
+            qanda.setANS("0");
+            qanda.setQUA(String.valueOf("-" + data.get(i).getQuestion()));
+            dbHandler.insertQandA(qanda);
+        }
+        get();
     }
 
     @Override
@@ -146,18 +223,17 @@ public class MainActivity extends AppCompatActivity implements IMainView {
 
     @OnClick(R.id.yes)
     public void yes(View v) {
-
-        sending("Yes");
+        send("Yes");
     }
 
     @OnClick(R.id.submit)
     public void submit(View v) {
         AnswerModel model = new AnswerModel();
-
-        for (int i = 0; i < answers.size(); i++) {
+        List<QANDA> list = dbHandler.getQandA();
+        for (int i = 0; i < list.size(); i++) {
             AnsweredQuations a = new AnsweredQuations();
-            a.setAnswer(answers.get(i));
-            a.setId(i + 1);
+            a.setAnswer(list.get(i).getANS());
+            a.setId(String.valueOf(list.get(i).getQ_ID()));
             answeredQuationsList.add(a);
         }
         model.setQlist(answeredQuationsList);
@@ -168,8 +244,6 @@ public class MainActivity extends AppCompatActivity implements IMainView {
         model.setMobile(mobile);
         model.setId(id);
         model.setName(name);
-
-
         presenter.sendAnswers(model);
         constents.showProgressdialog(this);
 
@@ -178,98 +252,31 @@ public class MainActivity extends AppCompatActivity implements IMainView {
 
     @OnClick(R.id.no)
     public void no(View v) {
-        sending("No");
+        send("No");
     }
 
     @OnClick(R.id.send)
     public void send(View v) {
 
-        sending("");
+
+        if (!answeredit.getText().toString().equalsIgnoreCase("")) {
+            updateAnswer(answeredit.getText().toString());
+        }
     }
 
-
-    public void sending(String name) {
-
-
-        if (!answeredit.getText().toString().equals("") || !name.equals("")) {
-
-            if (name.equals("")) {
-                adapter.listall(answeredit.getText().toString());
-
-                answers.add(answeredit.getText().toString());
-                answeredit.setText("");
-            } else {
-                if (name.equalsIgnoreCase("yes")) {
-
-                    answers.add("true");
-                } else {
-
-                    answers.add("false");
-                }
-
-                adapter.listall(name);
-            }
-            recycle.scrollToPosition(QuationsAdapter.listall.size() - 1);
-            send.setEnabled(false);
-
-
-            if (i < 4) {
-
-
-                i++;
-
-                if (i == 1) {
-
-                    answeredit.setInputType(InputType.TYPE_CLASS_TEXT);
-                    setEditTextMaxLength(100);
-                } else if (i == 2) {
-
-                    answeredit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
-                    setEditTextMaxLength(10);
-
-                } else if (i == 3) {
-
-                    typing.setVisibility(View.GONE);
-                    yesno.setVisibility(View.VISIBLE);
-
-                } else if (i == 4) {
-
-                    typing.setVisibility(View.VISIBLE);
-                    yesno.setVisibility(View.GONE);
-                    answeredit.requestFocus();
-
-                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.showSoftInput(answeredit, InputMethodManager.SHOW_IMPLICIT);
-
-
-                    answeredit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
-                    setEditTextMaxLength(5);
-                }
-
-
-                Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        adapter.listall("-" + data.get(i).getQuestion());
-                        recycle.scrollToPosition(QuationsAdapter.listall.size() - 1);
-                        send.setEnabled(true);
-                    }
-                }, 0);
-
-            } else {
-                completed.setVisibility(View.VISIBLE);
-                typing.setVisibility(View.GONE);
-                yesno.setVisibility(View.GONE);
-            }
-
-
+    public void send(String s) {
+        if (!s.equalsIgnoreCase("")) {
+            updateAnswer(s);
         }
+    }
 
+    public void updateAnswer(String s) {
+        listAll.add(s);
+        adapter.notifyDataSetChanged();
+        recycle.scrollToPosition(listAll.size() - 1);
+        dbHandler.updateAnw(finalqndid.get(listAll.size() - (listAll.size() / 2)-1).getQUA(), s);
+        getNextQuestion(listAll.size() - (listAll.size() / 2));
 
-        else {
-            Toast.makeText(this, "Please Enter Valid Answer", Toast.LENGTH_SHORT).show();
-        }
     }
 
 }
